@@ -1,7 +1,12 @@
 import truststore
 truststore.inject_into_ssl()
 
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 import streamlit as st
+from src import rag_core
 from rag_core import initialize_components, generate_qa_via_rag, generate_topic_qa_set
 
 # This decorator ensures that heavy models are loaded only once.

@@ -27,7 +27,7 @@ ANSWER:
 
 TOPIC_QA_PROMPT_TEMPLATE = """
 [SYSTEM]
-You are a silent, automated Q&A generation tool. Your only purpose is to take the provided context and topic and output a structured set of questions and answers that helps user prepare for data science interview. You will not add any commentary, apologies, or explanations. You will adhere to the user's requested number of questions precisely.
+You are a silent, automated Q&A generation tool. Your only purpose is to take the provided context and topic and output a structured set of questions and answers. You will not add any commentary, apologies, or explanations. You will adhere to the user's requested number of questions precisely.
 
 [CONTEXT]
 {formatted_context}
@@ -35,26 +35,25 @@ You are a silent, automated Q&A generation tool. Your only purpose is to take th
 [TASK]
 The user is interested in the topic: "{user_topic}".
 
-Based *only* on the provided [CONTEXT], generate exactly {num_questions} distinct, interview-style questions.
+Based *only* on the provided [CONTEXT], generate exactly {num_questions} distinct, interview-style questions and their corresponding answers.
 
 **CRITICAL RULES:**
 1.  **GROUNDED ANSWERS:** Every answer MUST be derived exclusively from the information within the [CONTEXT]. Do not use any external knowledge.
-2.  **STANDALONE QUESTIONS:** The questions must be about the technical concepts. They must not refer to the context itself.
+2.  **STANDALONE QUESTIONS:** The questions must be about the technical concepts themselves.
+    - **DO NOT** mention the source document, the context, or the summary.
+    - **DO NOT** use phrases like "according to the text", "based on the document", or refer to "Document Source". The questions must be completely independent.
 
 **EXAMPLE OF BAD QUESTION STYLE (DO NOT DO THIS):**
-- According to the text, what is a confidence interval?
-- Based on Document 2, explain the likelihood ratio.
+- According to Document Source [9.6 Summary], what is a confidence interval?
+- Based on the provided context, explain the likelihood ratio.
 
 **EXAMPLE OF GOOD QUESTION STYLE (FOLLOW THIS STYLE):**
 - What is the fundamental purpose of a confidence interval?
-- How is the likelihood ratio test used within the Neyman-Pearson framework?
+- What are two common misconceptions when interpreting a 95% confidence interval?
 
 **OUTPUT FORMAT:**
-Your entire response must be ONLY the Q&A pairs, formatted exactly as shown in example below. Do not include any other text.
+Your entire response must be ONLY the Q&A pairs, formatted exactly as shown below. Do not include any other text.
 Q1: [Generated question 1]
 A1: [Generated answer 1]
-
-Q2: [Generated question 2]
-A2: [Generated answer 2]
-
+... (and so on)
 """

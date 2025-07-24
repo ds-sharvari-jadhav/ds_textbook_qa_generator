@@ -1,3 +1,4 @@
+from src import config
 import chromadb
 from sentence_transformers import SentenceTransformer
 import ollama
@@ -5,7 +6,7 @@ import time
 import json
 import re
 import os
-import config
+
 
 # --- Core Components Initialization ---
 # Global variables to hold the initialized components
@@ -19,7 +20,7 @@ def initialize_components():
     """
     print("Loading sentence transformer model...")
     try:
-        embedding_model = SentenceTransformer(EMBEDDING_MODEL_NAME)
+        embedding_model = SentenceTransformer(config.EMBEDDING_MODEL_NAME)
         print("Embedding model loaded.")
     except Exception as e:
         print(f"Error loading sentence transformer model: {e}")
@@ -27,9 +28,9 @@ def initialize_components():
 
     print("Connecting to ChromaDB...")
     try:
-        client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
-        collection = client.get_collection(name=CHROMA_COLLECTION_NAME)
-        print(f"Connected to ChromaDB collection '{CHROMA_COLLECTION_NAME}' with {collection.count()} items.")
+        client = chromadb.PersistentClient(path=config.CHROMA_DB_PATH)
+        collection = client.get_collection(name=config.CHROMA_COLLECTION_NAME)
+        print(f"Connected to ChromaDB collection '{config.CHROMA_COLLECTION_NAME}' with {collection.count()} items.")
     except Exception as e:
         print(f"Error connecting to ChromaDB: {e}")
         collection = None
@@ -58,7 +59,7 @@ def retrieve_relevant_chunks(query_text, embedding_model, collection, n_results=
         if results and results.get('distances') and results.get('distances')[0]:
             best_distance = results['distances'][0][0]
             print(f"  Relevance check: Best distance is {best_distance:.4f}")
-            if best_distance > RELEVANCE_THRESHOLD:
+            if best_distance > config.RELEVANCE_THRESHOLD:
                 print("  Relevance check FAILED. Best match is not relevant enough.")
                 return None 
 
@@ -67,39 +68,35 @@ def retrieve_relevant_chunks(query_text, embedding_model, collection, n_results=
         print(f"Error during retrieval: {e}")
         return None
 
-def format_context_for_llm(retrieval_results_from_chroma, max_chunks_to_use=N_RESULTS_TO_RETRIEVE_FOR_RAG):
+def format_context_for_llm(retrieval_results, max_chunks_to_use):
     """
     Formats retrieved chunks from ChromaDB into a single context string for the LLM.
+    This version omits the source metadata from the context to prevent the LLM
+    from referencing it in the generated questions.
     """
-    context_parts = []
-    if not (retrieval_results_from_chroma and 
-            retrieval_results_from_chroma.get('documents') and 
-            retrieval_results_from_chroma.get('documents')[0]):
+    # Check if retrieval results are valid and not empty
+    if not (retrieval_results and 
+            retrieval_results.get('documents') and 
+            retrieval_results.get('documents')[0]):
         return "No relevant context found to provide to the LLM."
 
-    documents_list = retrieval_results_from_chroma['documents'][0]
-    metadatas_list = retrieval_results_from_chroma['metadatas'][0]
+    # Extract the list of document texts
+    documents_list = retrieval_results['documents'][0]
     
+    # Determine how many of the top chunks to use
     num_to_use = min(len(documents_list), max_chunks_to_use)
     if num_to_use == 0:
         return "No relevant context found to provide to the LLM."
 
-    context_parts.append("CONTEXT FROM TEXTBOOK ('Introduction to Probability for Data Science'):\n")
+    # Build the context string
+    context_parts = []
+    context_parts.append("[CONTEXT]") # Use the same tag as in the prompt for clarity
+    
     for i in range(num_to_use):
         doc_text = documents_list[i]
-        metadata = metadatas_list[i]
-        source_info = "Unknown Section"
-        if metadata:
-            l3 = metadata.get('L3_Header')
-            l2 = metadata.get('L2_Header')
-            l1 = metadata.get('L1_Header')
-            if l3: source_info = l3.replace("####","").strip() # Clean header markers
-            elif l2: source_info = l2.replace("###","").strip()
-            elif l1: source_info = l1.replace("##","").strip()
-        
-        context_parts.append(f"\n--- Retrieved Document {i+1} (Source: {source_info}) ---\n{doc_text}\n--- End of Document {i+1} ---")
+        # NEW, SIMPLER WAY: Just include the text, without the source metadata
+        context_parts.append(f"\n--- Context Snippet {i+1} ---\n{doc_text}")
     
-    context_parts.append("\nEND OF PROVIDED CONTEXT.")
     return "\n".join(context_parts)
     
 def parse_multiple_qa(llm_response_text, expected_count):
@@ -145,7 +142,7 @@ def generate_qa_via_rag(user_query, embedding_model, collection):
         user_query, 
         embedding_model, 
         collection, 
-        n_results=N_RESULTS_TO_RETRIEVE_FOR_RAG
+        n_results=config.N_RESULTS_TO_RETRIEVE_FOR_RAG
     )
     print(f"  Context retrieval took {time.time() - retrieval_time_start:.2f}s")
 
@@ -161,14 +158,14 @@ def generate_qa_via_rag(user_query, embedding_model, collection):
         return None, None, formatted_context_for_llm
 
     print("Step 3: Constructing LLM prompt...")
-    full_prompt_for_llm = LLM_PROMPT_TEMPLATE.format(formatted_context=formatted_context_for_llm)
+    full_prompt_for_llm = config.LLM_PROMPT_TEMPLATE.format(formatted_context=formatted_context_for_llm)
 
-    print(f"Step 4: Calling LLM ({OLLAMA_MODEL_NAME})...")
+    print(f"Step 4: Calling LLM ({config.OLLAMA_MODEL_NAME})...")
     llm_time_start = time.time()
     llm_response_text = "LLM Call Failed or No Response"
     try:
         response = ollama.chat(
-            model=OLLAMA_MODEL_NAME,
+            model=config.OLLAMA_MODEL_NAME,
             messages=[{'role': 'user', 'content': full_prompt_for_llm}],
         )
         llm_response_text = response['message']['content']
@@ -224,7 +221,7 @@ def generate_topic_qa_set(user_topic, embedding_model, collection, num_questions
         user_topic, 
         embedding_model, 
         collection, 
-        n_results=N_RESULTS_TO_RETRIEVE_FOR_RAG
+        n_results=config.N_RESULTS_TO_RETRIEVE_FOR_RAG
     )
     print(f"  Context retrieval took {time.time() - retrieval_time_start:.2f}s")
 
@@ -244,18 +241,18 @@ def generate_topic_qa_set(user_topic, embedding_model, collection, num_questions
         return None, formatted_context_for_llm
 
     print("Step 3: Constructing LLM prompt for topic...")
-    full_prompt_for_llm = TOPIC_QA_PROMPT_TEMPLATE.format(
+    full_prompt_for_llm = config.TOPIC_QA_PROMPT_TEMPLATE.format(
         formatted_context=formatted_context_for_llm,
         user_topic=user_topic,
         num_questions=num_questions
     )
 
-    print(f"Step 4: Calling LLM ({OLLAMA_MODEL_NAME})...")
+    print(f"Step 4: Calling LLM ({config.OLLAMA_MODEL_NAME})...")
     llm_time_start = time.time()
     llm_response_text = ""
     try:
         response = ollama.chat(
-            model=OLLAMA_MODEL_NAME,
+            model=config.OLLAMA_MODEL_NAME,
             messages=[{'role': 'user', 'content': full_prompt_for_llm}],
         )
         llm_response_text = response['message']['content']
@@ -265,9 +262,18 @@ def generate_topic_qa_set(user_topic, embedding_model, collection, num_questions
         return None, formatted_context_for_llm
 
     print("Step 5: Parsing LLM response...")
-    qa_pairs = parse_multiple_qa(llm_response_text, num_questions)
+    all_parsed_qa = parse_multiple_qa(llm_response_text, num_questions)
     
-    return qa_pairs, formatted_context_for_llm 
+    if len(all_parsed_qa) > num_questions:
+        print(f"  Warning: LLM generated {len(all_parsed_qa)} Q&As, but only {num_questions} were requested. Truncating.")
+        qa_set = all_parsed_qa[:num_questions]
+    else:
+        qa_set = all_parsed_qa
+        
+    if not qa_set:
+        print("Warning: Parsing failed for topic-based Q&A. Returning raw response.")
+        return [{"question": "Parsing Failed", "answer": llm_response}], formatted_context 
+    return qa_set, formatted_context_for_llm 
     
 if __name__ == '__main__':
     print("Running self-test for rag_core.py...")

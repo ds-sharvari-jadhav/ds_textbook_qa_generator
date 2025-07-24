@@ -1,0 +1,21 @@
+# Python virtual environment
+venv/
+.venv/
+
+# Python cache files
+__pycache__/
+*.pyc
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# macOS specific files
+.DS_Store
+
+# Data and database files
+chapter_pdfs/
+*.pdf
+*.json
+*.md
+*.txt
+chroma_db_nougat_chapter9/

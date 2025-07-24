@@ -45,5 +45,17 @@ Follow these steps to set up and run the project locally.
 
 **2. Clone the Repository:**
 ```bash
-git clone https://github.com/your-username/your-repo-name.git
-cd your-repo-name
+git clone https://github.com/ds-sharvari-jadhav/ds_textbook_qa_generator.git
+cd ds_textbook_qa_generator
+
+**3. Set Up Environment & Dependencies:**
+```bash
+# Create and activate a virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# Install required Python packages
+pip install -r requirements.txt
+
+**4.Set Up Local LLM:**
+ollama pull phi3:mini-4k

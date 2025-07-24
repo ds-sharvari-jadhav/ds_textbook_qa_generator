@@ -16,7 +16,9 @@ This project is an AI-powered system that ingests specific chapters from data sc
 
 *(Here, you will insert a GIF or a high-quality screenshot of your Streamlit app in action. This is highly recommended!)*
 
-![App Demo](link_to_your_gif_or_screenshot.png)
+![[App Demo](https://github.com/ds-sharvari-jadhav/ds_textbook_qa_generator/blob/main/src/assets/app-demo.png)](link_to_your_gif_or_screenshot.png)
+
+
 
 ## 🛠️ Technology Stack & Architecture
 

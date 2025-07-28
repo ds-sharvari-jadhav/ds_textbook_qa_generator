@@ -62,19 +62,29 @@ pip install -r requirements.txt
 **4.Set Up Local LLM:**
 ollama pull phi3:mini-4k
 
-**5. Prepare Data (One-Time Setup):**
-This process builds the vector database from your textbook PDF. This is a long process that can take over an hour depending on your machine's performance.
+### 5. Prepare Data (One-Time Setup):
+
+This is a multi-step, automated process that builds the vector database from your textbook PDF. It ingests the source PDF, processes it with Nougat, chunks the content, generates embeddings, and populates the database. This entire pipeline can take over an hour to run depending on your machine's performance.
 
 -   Place your textbook PDF (e.g., `"Introduction to Probability for Data Science.pdf"`) in the project's **root directory**.
--   **Important:** Before running, you must open each script below and configure the necessary variables inside them (e.g., file paths, chapter page numbers).
--   Run the data processing scripts from the **root directory** in this specific order:
+-   **Important:** Before running, you must open the relevant data processing scripts in the `src/` folder (e.g., `01b_split_chapter_pdf.py`, etc.) and configure the necessary variables inside them (like file paths and chapter page numbers).
+-   Run the following commands from the project's **root directory** in the specified order:
 
 ```bash
-# Step 1: Split the PDF to your target chapter
-# (Configure variables inside this script first)
+# Step 1: Split the PDF to the target chapter
 python3 src/01b_split_chapter_pdf.py
 
-# Step 2: Process the chapter PDF with Nougat (this will take a long time)
-# (Configure variables inside this script first)
+# Step 2: Process the chapter with Nougat (this will take a long time)
 python3 src/01d_nougat_parser_pdf.py
+
+# Step 3: Chunk the markdown, generate embeddings, and populate the database
+python3 src/03_embedding_vectorstore.py
 ```
+After these scripts complete successfully, a chroma_db_nougat_chapter9/ folder containing the knowledge base will be created.
+
+# 🚀 Usage
+Once the vector database has been built, launch the Streamlit web application from the project's root directory:
+```bash
+streamlit run src/app.py
+```
+Open your web browser to the local URL provided by Streamlit (usually http://localhost:8501).

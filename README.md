@@ -47,6 +47,7 @@ Follow these steps to set up and run the project locally.
 ```bash
 git clone https://github.com/ds-sharvari-jadhav/ds_textbook_qa_generator.git
 cd ds_textbook_qa_generator
+```
 
 **3. Set Up Environment & Dependencies:**
 ```bash
@@ -56,6 +57,24 @@ source venv/bin/activate
 
 # Install required Python packages
 pip install -r requirements.txt
+```
 
 **4.Set Up Local LLM:**
 ollama pull phi3:mini-4k
+
+**5. Prepare Data (One-Time Setup):**
+This process builds the vector database from your textbook PDF. This is a long process that can take over an hour depending on your machine's performance.
+
+-   Place your textbook PDF (e.g., `"Introduction to Probability for Data Science.pdf"`) in the project's **root directory**.
+-   **Important:** Before running, you must open each script below and configure the necessary variables inside them (e.g., file paths, chapter page numbers).
+-   Run the data processing scripts from the **root directory** in this specific order:
+
+```bash
+# Step 1: Split the PDF to your target chapter
+# (Configure variables inside this script first)
+python3 src/01b_split_chapter_pdf.py
+
+# Step 2: Process the chapter PDF with Nougat (this will take a long time)
+# (Configure variables inside this script first)
+python3 src/01d_nougat_parser_pdf.py
+```
